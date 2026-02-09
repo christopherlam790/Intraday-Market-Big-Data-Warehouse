@@ -70,11 +70,7 @@ def main(overwrite: bool = False) -> None:
     for path in csv_files:
         
         try:
-            # Ignore the example and any file not organized properly
-            if "Zipped data" not in str(path):            
-                pass
-            
-            
+              
             dataset_name = Path(path).stem
 
             
@@ -82,15 +78,20 @@ def main(overwrite: bool = False) -> None:
             if dataset_name == "TOS Kaggle data week ending 2024 09 013csv":
                 dataset_name = "TOS Kaggle data week ending 2024 09 13"
 
-                
-            
 
+            skip_flag = False
+            # Ignore the example and any file not organized properly
+            if "Zipped data" not in str(path) or dataset_name == "TOS Kaggle data example.parquet":            
+                skip_flag = True
             
             
-            if overwrite or not os.path.exists(f"{BRONZE_ROOT}/{dataset_name}.parquet"):
+            # Only establish if not a skip file, overwrite is false, and does not already exist
+            if not skip_flag and (overwrite or not os.path.exists(f"{BRONZE_ROOT}/{dataset_name}.parquet")):
                 df = pd.read_csv(path)
                 
                 df.to_parquet(f"{BRONZE_ROOT}/{dataset_name}.parquet", engine="pyarrow")
+            
+                print(df)
             
                 parquet_count += 1
             else:
