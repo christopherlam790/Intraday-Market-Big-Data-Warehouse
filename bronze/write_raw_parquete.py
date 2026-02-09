@@ -52,9 +52,10 @@ def list_csv_files(dataset_path: Path) -> list[Path]:
 
 """
 Main func for ingestion - Makes parquety files
+@param:bool overwrite - bool indicating if to overwrite if file already exists; False by default 
 @returns: None
 """
-def main() -> None:
+def main(overwrite: bool = False) -> None:
     print("Downloading dataset from Kaggle...")
     dataset_path = Path(kagglehub.dataset_download(DATASET_ID))
 
@@ -83,11 +84,18 @@ def main() -> None:
 
                 
             
-            df = pd.read_csv(path)
+
             
-            df.to_parquet(f"{BRONZE_ROOT}/{dataset_name}.parquet", engine="pyarrow")
             
-            parquet_count += 1
+            if overwrite or not os.path.exists(f"{BRONZE_ROOT}/{dataset_name}.parquet"):
+                df = pd.read_csv(path)
+                
+                df.to_parquet(f"{BRONZE_ROOT}/{dataset_name}.parquet", engine="pyarrow")
+            
+                parquet_count += 1
+            else:
+                print(f"Parquete {dataset_name} already exists")
+                
         except:
             print(f"Unexpected error on dataset {dataset_name}")
             continue
