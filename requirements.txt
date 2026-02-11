@@ -1,0 +1,4 @@
+kagglehub==0.4.3
+pandas==3.0.0
+pyarrow==22.0.0
+python-dotenv==1.2.1

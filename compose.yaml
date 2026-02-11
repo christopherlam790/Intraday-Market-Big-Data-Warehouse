@@ -1,0 +1,6 @@
+services:
+  intradaymarketbigdataanalysis:
+    image: intradaymarketbigdataanalysis
+    build:
+      context: .
+      dockerfile: ./Dockerfile
