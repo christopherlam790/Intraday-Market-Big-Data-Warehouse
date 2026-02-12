@@ -1,6 +1,7 @@
 #Data
 *.parquet
 *.csv
+*.json
 
 # Kaggle
 .kaggle/
