@@ -2,10 +2,14 @@ import pandas as pd
 import os
 from pathlib import Path
 import pyarrow as pq
+import json
+
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SILVER_ROOT = PROJECT_ROOT / "data" / "silver" / "intraday_prices"
+SILVER_META = PROJECT_ROOT / "data" / "silver" / "metadata"
+
 
 VALID_COLS = ['ID', 'TimeStamp', '/ES', '/NQ', '/RTY', 'SPY', 'QQQ', 'IWM']
 
@@ -43,13 +47,15 @@ def list_files_alphabetically(folder_path: Path) -> list[Path]:
     return sorted(paths)
 
 
-def add_clean_metadata_instance(file: str, layer: str, process:str, status: str, issue: str, action:str, notes: str):
+def add_clean_metadata_instance(file: str, layer: str, process:str, sub_process:str,
+                                status: str, issue: str, action:str, notes: str):
     
     
     return {
         "file": file,
         "layer": layer,
         "process":process,
+        "sub_process": sub_process,
         "status": status,
         "issue": issue,
         "action": action,
@@ -77,8 +83,6 @@ def main(folder_path:str):
     metadata = []
     
     
-    cols = []
-    
     
     # Itterate through each bronze parquet
     for parquet in sorted_parquet_paths:
@@ -92,7 +96,7 @@ def main(folder_path:str):
         # ------------------------
 
         """
-        Helper func for cleaning cols; Ensures necassary cols in df
+        Helper func for cleaning cols; Ensures necassary cols in df; Appends to metadata
         @param:pd.DataFrame df - df to clean
         @returns: pd.DataFrame - Col cleaned df
         """
@@ -120,6 +124,7 @@ def main(folder_path:str):
                 metadata.append(add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
+                                                            sub_process= "col_existence",
                                                             status= "conforming",
                                                             issue= "N/A",
                                                             action="processed",
@@ -153,6 +158,7 @@ def main(folder_path:str):
                     metadata.append(add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
+                                                            sub_process= "col_existence",
                                                             status= "non_conforming",
                                                             issue= "silver_cleaning_col_1",
                                                             action="adjusted",
@@ -178,6 +184,7 @@ def main(folder_path:str):
                     metadata.append(add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
+                                                            sub_process= "col_existence",
                                                             status= "non_conforming",
                                                             issue= "silver_cleaning_col_2",
                                                             action="adjusted",
@@ -198,50 +205,108 @@ def main(folder_path:str):
         df = clean_cols_for_existence(df)
         
         
+        
         # ------------------
         # Verify necassary col's types
         # --------------------
         
-        
+        """
+        Helper func for cleaning cols; Ensures necassary types in df; Appends to metadata
+        @param:pd.DataFrame df - df to clean
+        @returns: pd.DataFrame - Col cleaned df
+        """ 
         def clean_cols_for_type(df: pd.DataFrame) -> pd.DataFrame:
-            
-            
-            try:
-                for col in VALID_COLS:
-                
-                    col_type = df[col].dtype
-                
-                    if col == "ID":
+        
+        
 
+            for col in VALID_COLS:
+            
+                confoming_flag = True
+            
+                col_type = df[col].dtype
+            
+                if col == "ID":
+                    
+                    try:
                         assert(col_type == "int64")
-
                         
+                    except:
+                        confoming_flag = False
+                        
+                        df[col] = df[col].astype("int64")
+                        
+                               
+                elif col == "TimeStamp":
+                    try:
+                        assert(col_type == "object")
+                    except:
+                        confoming_flag = False
+    
+                        df[col] = df[col].astype("object")
+    
+                else:
+                    try:
+                        assert(col_type == "float64")
+            
+                    except:
+                        confoming_flag = False
+                        
+                        df[col] = df[col].astype("float64")
+                        
+
+                if confoming_flag:
+                    metadata.append(add_clean_metadata_instance(file=parquet,
+                                                            layer= "silver",
+                                                            process= "cleaning",
+                                                            sub_process= "col_type",
+                                                            status= "conforming",
+                                                            issue= "N/A",
+                                                            action="processed",
+                                                            notes="N/A"))
+                else:
+                   metadata.append(add_clean_metadata_instance(file=parquet,
+                                                            layer= "silver",
+                                                            process= "cleaning",
+                                                            sub_process= "col_type",
+                                                            status= "non_conforming",
+                                                            issue= "silve_cleaning_col_3",
+                                                            action="adjusted",
+                                                            notes="Convert col types")) 
+
+
+                # Reverify cols; Error if fails 
+                
+                col_type = df[col].dtype
+            
+                try:
+                    if col == "ID":
+                        assert(col_type == "int64")
+    
                     elif col == "TimeStamp":
                         assert(col_type == "object")
-
-                        
+                            
                     else:
                         assert(col_type == "float64")
                 
-            except:
-                print(f"Error in parquet {parquet}")
-               
-                
+                except:
+                    raise Exception(f"An error has occured with col typing in parquet {parquet}")
+            
+            return df
+            
+                            
+        df = clean_cols_for_type(df=df)
+        
+        print(df.head())
         
         
-        clean_cols_for_type(df=df)
-        
-        
-        # Helper for verifying curr cols
-        for c in list(df.columns):
-            if c not in cols:
-                #print(f"Adding col {c} from parquet {parquet}")
-                cols.append(c)
 
+    ensure_dir(SILVER_META)
 
-    print(cols)
+    with open(SILVER_META / "cleaning_metadata.json", "w") as json_file:
+        json.dump(metadata, json_file, indent=4)
     
-    print(metadata)
+    json_file.close()
+    
                 
                 
                 
