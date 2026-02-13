@@ -5,6 +5,19 @@ import pyarrow as pq
 import json
 
 
+import sys
+
+
+root_dir = Path(__file__).resolve().parent.parent
+helper_path = str(root_dir / "helpers")
+
+if helper_path not in sys.path:
+    sys.path.append(helper_path)
+
+
+import add_metadata
+
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SILVER_ROOT = PROJECT_ROOT / "data" / "silver" / "intraday_prices"
@@ -46,21 +59,6 @@ def list_files_alphabetically(folder_path: Path) -> list[Path]:
     
     return sorted(paths)
 
-
-def add_clean_metadata_instance(file: str, layer: str, process:str, sub_process:str,
-                                status: str, issue: str, action:str, notes: str):
-    
-    
-    return {
-        "file": file,
-        "layer": layer,
-        "process":process,
-        "sub_process": sub_process,
-        "status": status,
-        "issue": issue,
-        "action": action,
-        "notes": notes,
-    }
 
 
 # -----------------------
@@ -121,7 +119,7 @@ def main(folder_path:str):
             try:
                 verify_cols(df=df)
                 
-                metadata.append(add_clean_metadata_instance(file=parquet,
+                metadata.append(add_metadata.add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
                                                             sub_process= "col_existence",
@@ -155,7 +153,7 @@ def main(folder_path:str):
                                     7: 'IWM'}, inplace=True)
                     
                     
-                    metadata.append(add_clean_metadata_instance(file=parquet,
+                    metadata.append(add_metadata.add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
                                                             sub_process= "col_existence",
@@ -181,7 +179,7 @@ def main(folder_path:str):
                     # Step 5: Save as properly structured parquet
                     df.to_parquet('fixed_file.parquet', index=False)
                     
-                    metadata.append(add_clean_metadata_instance(file=parquet,
+                    metadata.append(add_metadata.add_clean_metadata_instance(file=parquet,
                                                             layer= "silver",
                                                             process= "cleaning",
                                                             sub_process= "col_existence",
@@ -279,7 +277,7 @@ def main(folder_path:str):
                 
             # Add metadata for status
             if confoming_flag:
-                metadata.append(add_clean_metadata_instance(file=parquet,
+                metadata.append(add_metadata.add_clean_metadata_instance(file=parquet,
                                                         layer= "silver",
                                                         process= "cleaning",
                                                         sub_process= "col_type",
@@ -288,7 +286,7 @@ def main(folder_path:str):
                                                         action="processed",
                                                         notes="N/A"))
             else:
-                metadata.append(add_clean_metadata_instance(file=parquet,
+                metadata.append(add_metadata.add_clean_metadata_instance(file=parquet,
                                                         layer= "silver",
                                                         process= "cleaning",
                                                         sub_process= "col_type",

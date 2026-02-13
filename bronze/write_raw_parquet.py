@@ -6,6 +6,21 @@ from pathlib import Path
 import kagglehub
 import pandas as pd
 import os
+import json
+
+
+import sys
+
+
+root_dir = Path(__file__).resolve().parent.parent
+helper_path = str(root_dir / "helpers")
+
+if helper_path not in sys.path:
+    sys.path.append(helper_path)
+
+
+import add_metadata
+
 
 
 from dotenv import load_dotenv
@@ -21,7 +36,7 @@ DATASET_ID = os.getenv("KAGGLE_PATH")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BRONZE_ROOT = PROJECT_ROOT / "data" / "bronze" / "intraday_prices"
-
+BRONZE_META = PROJECT_ROOT / "data" / "bronze" / "metadata" 
 
 # ----------------------------
 # Helpers
@@ -67,6 +82,8 @@ def main(overwrite: bool = False) -> None:
 
     parquet_count = 0
 
+    metadata = []
+
     for path in csv_files:
         
         try:
@@ -94,14 +111,48 @@ def main(overwrite: bool = False) -> None:
                 print(df)
             
                 parquet_count += 1
+                
+                metadata.append(add_metadata.add_clean_metadata_instance(file=f"{BRONZE_ROOT}/{dataset_name}.parquet",
+                                     layer="bronze",
+                                    process= "ingest",
+                                    sub_process= "N/A",
+                                    status= "conforming",
+                                    issue= "N/A",
+                                    action= "processed",
+                                    notes= "N/A"))
+                                            
+                
             else:
                 print(f"Parquete {dataset_name} already exists")
                 
         except:
             print(f"Unexpected error on dataset {dataset_name}")
+            
+            metadata.append(add_metadata.add_clean_metadata_instance(file=f"{BRONZE_ROOT}/{dataset_name}.parquet",
+                                     layer="bronze",
+                                    process= "ingest",
+                                    sub_process= "N/A",
+                                    status= "non_onforming",
+                                    issue= "Unknown",
+                                    action= "skipped",
+                                    notes= "Skipped parquet due to unknown error"))
+            
             continue
         
+        
+    
     print(f"Established {parquet_count} parquets")
+    
+    # -----------------
+    # Write metadata
+    # -----------------
+
+    ensure_dir(BRONZE_META)
+
+    with open(BRONZE_META / "ingestion_metadata.json", "w") as json_file:
+        json.dump(metadata, json_file, indent=4)
+    
+    json_file.close()
 
         
         
