@@ -2,6 +2,8 @@
 *.parquet
 *.csv
 *.json
+*.DS_Store
+
 
 # Kaggle
 .kaggle/
