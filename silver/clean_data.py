@@ -40,14 +40,14 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-
 """
 Get list of files, ordered alphabeticaly for cleaning
 
 @param:Path folder_path - path to folder
+@param:str substring - optional substring that file path must abide by 
 @returns: list[Path] - List of files, alphabetically
 """
-def list_files_alphabetically(folder_path: Path) -> list[Path]:
+def list_files_alphabetically(folder_path: Path, substring:str = "") -> list[Path]:
         
     paths = []
     
@@ -55,7 +55,8 @@ def list_files_alphabetically(folder_path: Path) -> list[Path]:
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
         
-        paths.append(file_path)
+        if substring in file_path:
+            paths.append(file_path)
     
     return sorted(paths)
 
