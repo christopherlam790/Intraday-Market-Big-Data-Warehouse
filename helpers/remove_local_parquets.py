@@ -33,4 +33,4 @@ def main(folder_path: str) -> None:
 
 
 if __name__ == "__main__":
-    main("data/bronze/intraday_prices")
+    main("data/silver/intraday_prices")
