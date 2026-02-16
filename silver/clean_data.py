@@ -20,8 +20,8 @@ import add_metadata
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SILVER_ROOT = PROJECT_ROOT / "data" / "silver" / "intraday_prices"
-SILVER_META = PROJECT_ROOT / "data" / "silver" / "metadata"
+SILVER_ROOT = PROJECT_ROOT / "data" / "silver" / "cleaning"
+SILVER_META = PROJECT_ROOT / "data" / "silver" / "cleaning_metadata"
 
 
 VALID_COLS = ['ID', 'TimeStamp', '/ES', '/NQ', '/RTY', 'SPY', 'QQQ', 'IWM']
@@ -306,10 +306,12 @@ def main(folder_path:str):
         # --------------
         dataset_name = Path(parquet).stem        
 
-        if not os.path.isfile(f"{SILVER_ROOT}/{dataset_name}_cleaning.parquet"):
+        dataset_name = dataset_name + "_cleaning"
+
+        if not os.path.isfile(f"{SILVER_ROOT}/{dataset_name}.parquet"):
             print("Adding file")
         
-            df.to_parquet(f"{SILVER_ROOT}/{dataset_name}_cleaning.parquet", engine="pyarrow")
+            df.to_parquet(f"{SILVER_ROOT}/{dataset_name}.parquet", engine="pyarrow")
         
         
         
